@@ -2,6 +2,9 @@
 
 DSH 的跨会话记忆插件。第一版能力：新 root 会话的第一条用户消息进来时，从同 workspace 的旧 root 会话里找字面命中，注入一条带来源的回忆消息。已在 desktop profile 实测。
 
+> **已归档（2026-11-13）**：本插件的宿主层已并入 `agent-man`（一个包两个入口：`bin/agent-man.mjs` 与 `dsh/index.mjs`），
+> 由 `agent-man` 统一发布 1.0。本仓库不再演进，保留 v0.1.1 tag 供回溯；新代码请去 `code/agent-man`。
+
 ## 现在有什么
 
 | 文件 | 作用 |
