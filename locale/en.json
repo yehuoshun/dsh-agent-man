@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Agent memory",
+    "description": "Cross-session memory skeleton for DeepSeek Harness; no behavior yet."
+  }
+}
