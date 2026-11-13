@@ -25,7 +25,7 @@ function isRootHeader(header) {
     header
     && header.parentSession == null
     && header.origin !== 'subagent'
-    && header.delegationDepth === 0
+    && (header.delegationDepth == null || header.delegationDepth === 0)
     && header.isSeeded !== true,
   );
 }
@@ -63,7 +63,9 @@ async function maybeRecall(ctx, agent, payload, decision) {
 
   let sessionQuery;
   try {
-    sessionQuery = ctx.sessionQuery;
+    sessionQuery = typeof ctx.get === 'function'
+      ? ctx.get('sessionQuery')
+      : ctx.sessionQuery;
   } catch {
     return decision;
   }

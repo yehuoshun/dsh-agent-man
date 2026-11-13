@@ -178,7 +178,7 @@ export async function collectRecallItems({
 
   let candidates;
   try {
-    candidates = sessionQuery.filterSessions([
+    candidates = await sessionQuery.filterSessions([
       { kind: 'cwd', values: [cwd] },
       { kind: 'parent', values: [null] },
       { kind: 'availability', values: ['live', 'persisted'] },

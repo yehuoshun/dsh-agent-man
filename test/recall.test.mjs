@@ -63,23 +63,26 @@ function makeAgent({ id = 's-current', events = [], overrides = {} } = {}) {
 function makeCtx(sessions) {
   const handlers = new Map();
   const calls = { sessions: [], events: [] };
+  const sessionQuery = {
+    async filterSessions(filters) {
+      calls.sessions.push(filters);
+      return sessions;
+    },
+    async filterEvents(sessionId, filters) {
+      calls.events.push({ sessionId, filters });
+      const session = sessions.find((candidate) => candidate.header.id === sessionId);
+      if (session?.fail) throw new Error(`read failed: ${sessionId}`);
+      return session?.events ?? [];
+    },
+  };
   const ctx = {
     __handlers: handlers,
     on(name, fn) {
       handlers.set(name, fn);
       return () => {};
     },
-    sessionQuery: {
-      filterSessions(filters) {
-        calls.sessions.push(filters);
-        return sessions;
-      },
-      filterEvents(sessionId, filters) {
-        calls.events.push({ sessionId, filters });
-        const session = sessions.find((candidate) => candidate.header.id === sessionId);
-        if (session?.fail) throw new Error(`read failed: ${sessionId}`);
-        return session?.events ?? [];
-      },
+    get(name) {
+      return name === 'sessionQuery' ? sessionQuery : undefined;
     },
   };
   return { ctx, handlers, calls };
@@ -182,6 +185,16 @@ test('非 root 会话不读取历史', async () => {
     await run(preStep, agent, '继续做 dsh-agent-man');
     assert.equal(calls.sessions.length, 0);
   }
+});
+
+test('宿主 header 不带 delegationDepth 时仍按 root 处理', async () => {
+  const other = session('s-other', [hit('s-other', 1, '宿主里的旧会话')]);
+  const { ctx } = makeCtx([other]);
+  const { result } = await inject(ctx, [], '继续做 dsh-agent-man', {
+    agent: { overrides: { delegationDepth: undefined } },
+  });
+
+  assert.match(result.messages[0].content[0].text, /宿主里的旧会话/);
 });
 
 test('非首步、已有 user/message、已中止时都不读取', async () => {
