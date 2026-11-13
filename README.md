@@ -1,6 +1,6 @@
 # dsh-agent-man
 
-DSH 的跨会话记忆插件。第一版能力：新会话的第一条用户消息进来时，从同 workspace 的旧 root 会话里找字面命中，注入一条带来源的回忆消息。尚未装进 profile 实测。
+DSH 的跨会话记忆插件。第一版能力：新会话的第一条用户消息进来时，从同 workspace 的旧 root 会话里找字面命中，注入一条带来源的回忆消息。已在 desktop profile 实测。
 
 ## 现在有什么
 
@@ -34,6 +34,12 @@ DSH 的跨会话记忆插件。第一版能力：新会话的第一条用户消�
 
 `filterEvents()` 每次会加载整条 session log，且没有 `signal` 参数；12 个候选只能限制启动数量，不能取消已经开始的读取。这是第一版已知代价。
 
+## 实测
+
+2026-11-13 在 desktop profile 新开 root 会话，第一句发 `agent-man 到哪一步了`。首步开始前，session log 里出现一条注入的 `user/message`，带 3 条 `sessionId#seq` 来源；模型回答里明确引用了这条回忆。
+
+headless profile 也跑通了 `agent/created` → `agent/pre-step` 和 `sessionQuery` 读取；headless 没有模型 key，所以只验证到查询和注入 decision 层，没有完成模型回合。
+
 ## 跑测试
 
 ```powershell
@@ -42,4 +48,4 @@ node --test
 
 ## 安装
 
-用 DSH 的 `plugin_manager`，`action: install_bundle`，`target` 指向本目录的绝对路径。当前没有装进任何 profile，也没有做真实宿主验证。
+用 DSH 的 `plugin_manager`，`action: install_bundle`，`target` 指向本目录的绝对路径。已在 desktop profile 安装并验证；headless 的测试安装已移除。

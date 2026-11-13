@@ -23,7 +23,7 @@
 
 **决定**
 
-- 触发条件：只对 root agent 生效，要求 `parentSession === null`、`origin !== 'subagent'`、`delegationDepth === 0`、`isSeeded !== true`；在 `agent/pre-step` 中要求 `step === 1`，当前 `messages` 至少有一条 user 文本，且 `agent.session.snapshotEvents()` 里还没有 `user/message`。每个会话只尝试一次；没有 user 文本时不标记，等真正第一条用户消息再判断。
+- 触发条件：只对 root agent 生效，要求 `parentSession === null`、`origin !== 'subagent'`、`delegationDepth == null || delegationDepth === 0`（headless v4 header 可能省略该字段，见 §3）、`isSeeded !== true`；在 `agent/pre-step` 中要求 `step === 1`，当前 `messages` 至少有一条 user 文本，且 `agent.session.snapshotEvents()` 里还没有 `user/message`。每个会话只尝试一次；没有 user 文本时不标记，等真正第一条用户消息再判断。
 - 候选范围：用 `ctx.sessionQuery.filterSessions([{ kind: 'cwd', values: [cwd] }, { kind: 'parent', values: [null] }, { kind: 'availability', values: ['live', 'persisted'] }])`；排除当前会话；按 `createdAt` 新到旧；最多检查 12 个候选。
 - 特征词：从当前用户消息的文本中提取最多 4 个字面特征词；优先代码标识符、路径、URL、英文词（至少 3 个字符）和较长的中文连续片段（至少 3 个字符）；去重；没有特征词就不注入。
 - 命中方式：对每个候选调用 `filterEvents(sessionId, [{ kind: 'type', values: ['user/message', 'assistant/message'] }, { kind: 'text', text: needle }])`；单会话读取失败就跳过，不影响其他候选。不得调用 `searchSessions` / `searchEvents`：本 profile 的 `session-query-sqlite` 是 `openAt: never`，调用会抛 `SESSION_QUERY_SEARCH_DISABLED`。
@@ -46,3 +46,23 @@
 - 注入的是一条 user-role 消息，会永久进入 session log 并占用首步上下文；模型会看到它，UI 也可能把它显示成用户消息。
 - 只覆盖同 cwd、root、非 seeded 的会话；子代理、fork、其他 workspace 都不在范围内。
 - 这不是完整记忆系统：不主动记新事实，不提供 `remember` / `recall` 工具，不做摘要和去重之外的排序。
+
+## 3. 真实宿主缺 `delegationDepth` 时按 root 处理，`sessionQuery` 用 `ctx.get` 异步读取
+
+**决定**
+
+- root 判定把 `delegationDepth == null` 与 `0` 同等处理；仍要求 `parentSession == null`、`origin !== 'subagent'`、`isSeeded !== true`。
+- 取 `sessionQuery` 时先调用 `ctx.get('sessionQuery')`，取不到再回退 `ctx.sessionQuery`。
+- `filterSessions()` 和 `filterEvents()` 都按 Promise 处理，读取前 `await`；单个候选失败仍只跳过该候选。
+
+**来由**
+
+- headless 的 session header 只有 `version`、`id`、`createdAt`、`cwd`、`isSeeded`，没有 `delegationDepth`；原严格等 `0` 会让插件在第一步前直接返回，实测日志里 `root false`。desktop 新会话的 header 则带 `delegationDepth: 0`。
+- 直接取 `ctx.sessionQuery` 会抛 `cannot get property "sessionQuery" without inject`；`ctx.get('sessionQuery')` 能拿到服务。
+- `filterSessions()` 返回 Promise；不 `await` 时 `Array.isArray(candidates)` 为 false，候选永远是空，注入分支不会走到；未完成的读取还会在进程结束后报 `dsh: fatal load failure: Error: cannot get required service "sessions" in inactive context`。
+
+**代价**
+
+- 缺字段时只能靠 `parentSession` / `origin` / `isSeeded` 兜底；如果将来某个子代理也省略 `delegationDepth` 且不写 `origin`，可能被误判为 root。当前测试覆盖了 `origin: 'subagent'` 和非空 `parentSession` 两种子代理形态，但没有对真实子代理 header 单独取样。
+- `await` 会让首步等待候选读取完成；12 个候选 × 整条 log 的既有代价不变，只是不再静默失败。
+- 这是对真实宿主 API 的适配，不是新的记忆能力；以后 DSH 补回 `delegationDepth` 或改 `sessionQuery` 形状时，这段要跟着改。
