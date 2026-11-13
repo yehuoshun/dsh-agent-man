@@ -1,6 +1,6 @@
 # dsh-agent-man
 
-DSH 的跨会话记忆插件。当前是骨架：按 bundle 形状搭好，但还没装进 profile 验证，也没有记忆行为。
+DSH 的跨会话记忆插件。第一版能力：新会话的第一条用户消息进来时，从同 workspace 的旧 root 会话里找字面命中，注入一条带来源的回忆消息。尚未装进 profile 实测。
 
 ## 现在有什么
 
@@ -8,20 +8,31 @@ DSH 的跨会话记忆插件。当前是骨架：按 bundle 形状搭好，但�
 |---|---|
 | `package.json` | DSH bundle 清单：`dsh.bundle.patch`、宿主入口、locale/icon 导出。 |
 | `cordis.patch.yml` | 把 `dsh-agent-man` 自己插入当前 profile。 |
-| `index.mjs` | Host 插件入口，导出 `apply(ctx, config)`；当前为空实现。 |
+| `index.mjs` | Host 插件入口：在 `agent/created` 里监听 `agent/pre-step`，首步注入回忆。 |
+| `src/recall.mjs` | 特征词提取、UTF-8 截断、正文/来源格式、候选读取与去重。 |
 | `locale/en.json`、`locale/zh.json` | 插件管理器显示的标题和说明。 |
 | `icon.svg` | 本地图标，不引用外部资源。 |
 | `test/plugin.test.mjs` | 锁住清单、patch、入口、locale、icon 和 LF/UTF-8。 |
-| `docs/decisions.md` | 决定记录。 |
+| `test/recall.test.mjs` | 锁住触发边界、候选过滤、命中选择、截断、去重和失败降级。 |
+| `docs/decisions.md` | 决定记录；第一版合同在 §2。 |
+
+## 第一版边界
+
+- 只对 root、非 seeded、`step === 1`、且 session log 里还没有 `user/message` 的会话生效。
+- 只查同 `cwd`、`parent: [null]` 的旧会话，最多 12 个候选；排除当前会话。
+- 只做字面命中：从当前用户消息提最多 4 个特征词，用 `ctx.sessionQuery.filterEvents()` 扫描；不调用全文搜索。
+- 每个会话取最后一条命中的 assistant 文本，没有就取最后一条 user 文本。
+- 最多 3 条，单条 512 UTF-8 bytes，总片段 1536 UTF-8 bytes；合并成一条带 `sessionId#seq` 和 `source.kind = 'dsh-agent-man'` 的 user 消息，放在当前步最前。
+- 无命中、无特征词、中止或候选全部失败时不改 decision。
 
 ## 不是什么
 
-- 不读 session log。
-- 不注册工具，不铺命令表。
-- 不建第二份存储。
-- 不注册监听器、定时器或后台循环。
+- 不注册工具、命令、设置页，不铺命令表。
+- 不建第二份存储，不新增 session event 类型。
+- 不做 FTS、向量或 LLM 摘要，不扫描全部历史，不跨 workspace。
+- 不覆盖子代理、fork 或 seeded 会话。
 
-第一个能力还没选；跨会话回忆只是待验证提议，不是既成设计。
+`filterEvents()` 每次会加载整条 session log，且没有 `signal` 参数；12 个候选只能限制启动数量，不能取消已经开始的读取。这是第一版已知代价。
 
 ## 跑测试
 
@@ -31,4 +42,4 @@ node --test
 
 ## 安装
 
-用 DSH 的 `plugin_manager`，`action: install_bundle`，`target` 指向本目录的绝对路径。当前没有装进任何 profile。
+用 DSH 的 `plugin_manager`，`action: install_bundle`，`target` 指向本目录的绝对路径。当前没有装进任何 profile，也没有做真实宿主验证。
