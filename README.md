@@ -1,6 +1,6 @@
 # dsh-agent-man
 
-DSH 的跨会话记忆插件。第一版能力：新会话的第一条用户消息进来时，从同 workspace 的旧 root 会话里找字面命中，注入一条带来源的回忆消息。已在 desktop profile 实测。
+DSH 的跨会话记忆插件。第一版能力：新 root 会话的第一条用户消息进来时，从同 workspace 的旧 root 会话里找字面命中，注入一条带来源的回忆消息。已在 desktop profile 实测。
 
 ## 现在有什么
 

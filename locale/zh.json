@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Agent 记忆",
-    "description": "新会话第一条消息时，从同 workspace 的旧会话注入字面命中；不建第二份存储。"
+    "description": "新 root 会话第一条消息时，从同 workspace 的旧 root 会话注入字面命中；不建第二份存储。"
   }
 }

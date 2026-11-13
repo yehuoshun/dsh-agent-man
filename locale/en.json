@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Agent memory",
-    "description": "Injects literal hits from earlier same-workspace sessions on a new session's first message; no second store."
+    "description": "Injects literal hits from earlier same-workspace root sessions into a new root session's first message; no second store."
   }
 }
