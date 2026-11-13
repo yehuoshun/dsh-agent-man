@@ -1,11 +1,15 @@
 {
   "name": "dsh-agent-man",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
-  "description": "Cross-session memory plugin skeleton for DeepSeek Harness.",
+  "description": "Injects a source-attributed recall note from earlier same-workspace root sessions into the first user message of a new session.",
   "type": "module",
   "main": "./index.mjs",
   "icon": "./icon.svg",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yehuoshun/dsh-agent-man.git"
+  },
   "exports": {
     ".": "./index.mjs",
     "./cordis.patch.yml": "./cordis.patch.yml",
