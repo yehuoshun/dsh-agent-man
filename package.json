@@ -15,6 +15,7 @@
   },
   "files": [
     "index.mjs",
+    "src/*.mjs",
     "cordis.patch.yml",
     "locale/*.json",
     "icon.svg",

@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Agent memory",
-    "description": "Cross-session memory skeleton for DeepSeek Harness; no behavior yet."
+    "description": "Injects literal hits from earlier same-workspace sessions on a new session's first message; no second store."
   }
 }

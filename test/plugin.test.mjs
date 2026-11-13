@@ -20,7 +20,7 @@ test('package.json 是 DSH bundle 清单', () => {
   assert.equal(pkg.exports?.['./locale/*.json'], './locale/*.json');
   assert.equal(pkg.exports?.['./icon'], './icon.svg');
 
-  for (const file of ['index.mjs', 'cordis.patch.yml', 'locale/*.json', 'icon.svg']) {
+  for (const file of ['index.mjs', 'src/*.mjs', 'cordis.patch.yml', 'locale/*.json', 'icon.svg']) {
     assert.ok(pkg.files?.includes(file), `files 缺少 ${file}`);
   }
 });
@@ -68,12 +68,14 @@ test('文本文件是 UTF-8 无 BOM、LF', () => {
     'package.json',
     'cordis.patch.yml',
     'index.mjs',
+    'src/recall.mjs',
     'locale/en.json',
     'locale/zh.json',
     'icon.svg',
     'README.md',
     'docs/decisions.md',
     'test/plugin.test.mjs',
+    'test/recall.test.mjs',
     '.gitignore',
     '.gitattributes',
   ];

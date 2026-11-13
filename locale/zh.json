@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Agent 记忆",
-    "description": "DeepSeek Harness 的跨会话记忆骨架，当前还没有行为。"
+    "description": "新会话第一条消息时，从同 workspace 的旧会话注入字面命中；不建第二份存储。"
   }
 }
